@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <AssemblyName>AzureVsixSignTool</AssemblyName>
     <PackageId>AzureVsixSignTool</PackageId>
-    <VersionPrefix>0.1.1</VersionPrefix>
+    <VersionPrefix>0.1.2</VersionPrefix>
     <Authors>Kevin Jones;Pand</Authors>
     <TargetFramework>net7.0</TargetFramework>
 
