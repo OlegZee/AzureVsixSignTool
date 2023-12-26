@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <VersionPrefix>0.1.0</VersionPrefix>
     <Authors>Kevin Jones</Authors>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
   <PropertyGroup>
   </PropertyGroup>
