@@ -42,7 +42,7 @@ namespace OpenVsixSignTool.Core.Tests
                 Assert.Equal(VerifyResult.Success, signatureManager.VerifySignatures(true));
                 if (signatureManager.Signatures.Count != 1 || signatureManager.Signatures[0].SignedParts.Count != netfxPackage.GetParts().Count() - 1)
                 {
-                    Assert.True(false, "Missing parts");
+                    Assert.Fail("Missing parts");
                 }
                 var packageSignature = signatureManager.Signatures[0];
                 var expectedAlgorithm = OpcKnownUris.SignatureAlgorithms.rsaSHA256.AbsoluteUri;
@@ -81,7 +81,7 @@ namespace OpenVsixSignTool.Core.Tests
                 Assert.Equal(VerifyResult.Success, signatureManager.VerifySignatures(true));
                 if (signatureManager.Signatures.Count != 1 || signatureManager.Signatures[0].SignedParts.Count != netfxPackage.GetParts().Count() - 1)
                 {
-                    Assert.True(false, "Missing parts");
+                    Assert.Fail("Missing parts");
                 }
                 var packageSignature = signatureManager.Signatures[0];
                 var expectedAlgorithm = OpcKnownUris.SignatureAlgorithms.rsaSHA256.AbsoluteUri;

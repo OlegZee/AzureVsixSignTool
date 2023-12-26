@@ -1,5 +1,4 @@
-﻿using Microsoft.Azure.KeyVault;
-using System;
+﻿using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -14,7 +13,7 @@ namespace OpenVsixSignTool.Core
         private readonly AzureKeyVaultMaterializedConfiguration _configuration;
 
         /// <summary>
-        /// Creates a new siging context.
+        /// Creates a new signing context.
         /// </summary>
         public KeyVaultSigningContext(AzureKeyVaultMaterializedConfiguration configuration)
         {
@@ -37,19 +36,20 @@ namespace OpenVsixSignTool.Core
         /// </summary>
         public X509Certificate2 Certificate => _configuration.PublicCertificate;
 
+
         /// <summary>
         /// Gets the signature algorithm. Currently, only <see cref="SigningAlgorithm.RSA"/> is supported.
         /// </summary>
         public SigningAlgorithm SignatureAlgorithm { get; } = SigningAlgorithm.RSA;
 
-        public Uri XmlDSigIdentifier => SignatureAlgorithmTranslator.SignatureAlgorithmToXmlDSigUri(SignatureAlgorithm, _configuration.PkcsDigestAlgorithm);
+        public Uri XmlDSigIdentifier => OpcKnownUris.SignatureAlgorithms.rsaSHA256;
 
         public async Task<byte[]> SignDigestAsync(byte[] digest)
         {
             var client = _configuration.Client;
-            var algorithm = SignatureAlgorithmTranslator.SignatureAlgorithmToJwsAlgId(SignatureAlgorithm, _configuration.PkcsDigestAlgorithm);
-            var signature = await client.SignAsync(_configuration.Key.KeyIdentifier.Identifier, algorithm, digest);
-            return signature.Result;
+            //var algorithm = SignatureAlgorithmTranslator.SignatureAlgorithmToJwsAlgId(SignatureAlgorithm, _configuration.PkcsDigestAlgorithm);
+            var signature = await client.SignAsync(Azure.Security.KeyVault.Keys.Cryptography.SignatureAlgorithm.RS256, digest);
+            return signature.Signature;
         }
 
         public Task<bool> VerifyDigestAsync(byte[] digest, byte[] signature)

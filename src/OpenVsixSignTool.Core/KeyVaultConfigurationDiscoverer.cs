@@ -1,11 +1,14 @@
-﻿using Microsoft.Azure.KeyVault;
-using Microsoft.Azure.KeyVault.Cryptography;
-using Microsoft.Azure.KeyVault.Models;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
+﻿using Azure.Security.KeyVault.Keys;
+using Azure.Security.KeyVault.Keys.Cryptography;
+using Azure.Security.KeyVault.Certificates;
+using Microsoft.Identity.Client;
 using System;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Azure.Core;
+using Azure.Core.Pipeline;
+using Azure.Identity;
 using Crypto = System.Security.Cryptography;
 
 namespace OpenVsixSignTool.Core
@@ -14,40 +17,36 @@ namespace OpenVsixSignTool.Core
     {
         public static async Task<AzureKeyVaultMaterializedConfiguration> Materialize(AzureKeyVaultSignConfigurationSet configuration)
         {
-            async Task<string> Authenticate(string authority, string resource, string scope)
+            using (var httpClient = new HttpClient())
             {
-                if (!string.IsNullOrWhiteSpace(configuration.AzureAccessToken))
+                CertificateClientOptions certOptions = new CertificateClientOptions
                 {
-                    return configuration.AzureAccessToken;
-                }
+                    Transport = new HttpClientTransport(httpClient)
+                };
+                TokenCredential credential = configuration.Validate()
+                    ? new ClientSecretCredential(configuration.AzureTenantId, configuration.AzureClientId,
+                        configuration.AzureClientSecret) as TokenCredential
+                    : new EnvironmentCredential();
 
-                var context = new AuthenticationContext(authority);
-                ClientCredential credential = new ClientCredential(configuration.AzureClientId, configuration.AzureClientSecret);
-
-                AuthenticationResult result = await context.AcquireTokenAsync(resource, credential);
-                if (result == null)
-                {
-                    throw new InvalidOperationException("Authentication to Azure failed.");
-                }
-                return result.AccessToken;
+                var certVault = new CertificateClient(new Uri(configuration.AzureKeyVaultUrl)
+                    , credential
+                    , certOptions);
+                var azureCertificate = await certVault.GetCertificateAsync(configuration.AzureKeyVaultCertificateName);
+                var x509Certificate = new X509Certificate2(azureCertificate.Value.Cer);
+                var keyId = azureCertificate.Value.KeyId;
+                var cryptoVault = new CryptographyClient(keyId, credential);
+                return new AzureKeyVaultMaterializedConfiguration(cryptoVault, x509Certificate,
+                    configuration.FileDigestAlgorithm, configuration.PkcsDigestAlgorithm);
             }
-            var client = new HttpClient();
-            var vault = new KeyVaultClient(Authenticate, client);
-            var azureCertificate = await vault.GetCertificateAsync(configuration.AzureKeyVaultUrl, configuration.AzureKeyVaultCertificateName);
-            var x509Certificate = new X509Certificate2(azureCertificate.Cer);
-            var keyId = azureCertificate.KeyIdentifier;
-            var key = await vault.GetKeyAsync(keyId.Identifier);
-            return new AzureKeyVaultMaterializedConfiguration(vault, x509Certificate, key, configuration.FileDigestAlgorithm, configuration.PkcsDigestAlgorithm);
         }
     }
 
     public class AzureKeyVaultMaterializedConfiguration : IDisposable
     {
-        public AzureKeyVaultMaterializedConfiguration(KeyVaultClient client, X509Certificate2 publicCertificate,
-            KeyBundle key, Crypto.HashAlgorithmName fileDigestAlgorithm, Crypto.HashAlgorithmName pkcsDigestAlgorithm)
+        public AzureKeyVaultMaterializedConfiguration(CryptographyClient client, X509Certificate2 publicCertificate,
+            Crypto.HashAlgorithmName fileDigestAlgorithm, Crypto.HashAlgorithmName pkcsDigestAlgorithm)
         {
             Client = client;
-            Key = key;
             PublicCertificate = publicCertificate;
             FileDigestAlgorithm = fileDigestAlgorithm;
             PkcsDigestAlgorithm = pkcsDigestAlgorithm;
@@ -57,12 +56,10 @@ namespace OpenVsixSignTool.Core
         public Crypto.HashAlgorithmName PkcsDigestAlgorithm { get; }
 
         public X509Certificate2 PublicCertificate { get; }
-        public KeyVaultClient Client { get; }
-        public KeyBundle Key { get; }
+        public CryptographyClient Client { get; }
+        //public Uri KeyId { get; }
 
         public void Dispose()
-        {
-            Client.Dispose();
-        }
+        { }
     }
 }

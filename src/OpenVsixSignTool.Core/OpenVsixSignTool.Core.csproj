@@ -1,23 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net462</TargetFrameworks>
     <AssemblyName>OpenVsixSignTool.Core</AssemblyName>
     <PackageId>OpenVsixSignTool.Core</PackageId>
     <VersionPrefix>0.1.0</VersionPrefix>
     <Authors>Kevin Jones</Authors>
+    <TargetFrameworks>net462</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="4.3.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="3.13.9" />
-    <PackageReference Include="Microsoft.Azure.KeyVault" Version="2.0.6" />
-    <PackageReference Include="Microsoft.Azure.KeyVault.Cryptography" Version="2.0.5" />
+    <PackageReference Include="Azure.Core" Version="1.36.0" />
+    <PackageReference Include="Azure.Identity" Version="1.10.4" />
+    <PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.5.1" />
+    <PackageReference Include="Azure.Security.KeyVault.Keys" Version="4.5.0" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="8.0.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
-
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.IO.Compression.FileSystem" />
-    <Reference Include="System.Security" />
+    <Reference Include="System.IO.Compression" Condition="'$(TargetFramework)' == 'net48'" />
   </ItemGroup>
 </Project>

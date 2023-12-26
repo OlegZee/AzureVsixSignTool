@@ -8,6 +8,8 @@ namespace OpenVsixSignTool.Tests
 {
     public class SignIntegrationTests : IDisposable
     {
+        private static readonly string SamplePackage = @"sample" + Path.DirectorySeparatorChar + "OpenVsixSignToolTest.vsix";
+        private static readonly string CertsPathPrefix = @"certs" + Path.DirectorySeparatorChar;
         private readonly List<string> _shadowFiles = new List<string>();
 
         [Theory]
@@ -17,7 +19,7 @@ namespace OpenVsixSignTool.Tests
             using (var consoleWriter = new StringWriter())
             {
                 Console.SetOut(consoleWriter);
-                var shadow = ShadowCopyPackage(@"sample\OpenVsixSignToolTest.vsix");
+                var shadow = ShadowCopyPackage(SamplePackage);
                 Assert.Equal(expectedExitCode, Program.Main(args.Concat(new[] {shadow}).ToArray()));
                 Assert.Contains(expectedMessage, consoleWriter.ToString());
             }
@@ -31,7 +33,7 @@ namespace OpenVsixSignTool.Tests
             using (var consoleWriter = new StringWriter())
             {
                 Console.SetOut(consoleWriter);
-                var shadow = ShadowCopyPackage(@"sample\OpenVsixSignToolTest.vsix");
+                var shadow = ShadowCopyPackage(SamplePackage);
                 Assert.Equal(0, Program.Main(args.Concat(new[] { shadow }).ToArray()));
                 Assert.Contains(expectedMessage, consoleWriter.ToString());
             }
@@ -41,7 +43,7 @@ namespace OpenVsixSignTool.Tests
         [MemberData(nameof(HandleRepeatedCommandLineOptionsTheories))]
         public void ShouldHandleRepeatedCommandLineOptions((string[] args, string expectedMessage, int expectedExitCode)[] argsSets)
         {
-            var shadow = ShadowCopyPackage(@"sample\OpenVsixSignToolTest.vsix");
+            var shadow = ShadowCopyPackage(SamplePackage);
             foreach (var (args, expectedMessage, expectedExitCode) in argsSets)
             {
                 using (var consoleWriter = new StringWriter())
@@ -61,7 +63,7 @@ namespace OpenVsixSignTool.Tests
                 //Normal signature with PFX
                 yield return new object[]
                 {
-                    new[] {"sign", "-c", @"certs\rsa-2048-sha256.pfx", "-p", "test"}, "The signing operation is complete."
+                    new[] {"sign", "-c", CertsPathPrefix + @"rsa-2048-sha256.pfx", "-p", "test"}, "The signing operation is complete."
                 };
             }
         }
@@ -75,8 +77,8 @@ namespace OpenVsixSignTool.Tests
                 {
                     new[]
                     {
-                        (new [] {"sign", "-c", @"certs\rsa-2048-sha256.pfx", "-p", "test"}, "The signing operation is complete.", 0),
-                        (new [] {"sign", "-c", @"certs\rsa-2048-sha256.pfx", "-p", "test"}, "The VSIX is already signed.", 2)
+                        (new [] {"sign", "-c", CertsPathPrefix + @"rsa-2048-sha256.pfx", "-p", "test"}, "The signing operation is complete.", 0),
+                        (new [] {"sign", "-c", CertsPathPrefix + @"rsa-2048-sha256.pfx", "-p", "test"}, "The VSIX is already signed.", 2)
                     }
                 };
                 //Sign it once, then try signing it again with the force option.
@@ -84,8 +86,8 @@ namespace OpenVsixSignTool.Tests
                 {
                     new[]
                     {
-                        (new [] {"sign", "-c", @"certs\rsa-2048-sha256.pfx", "-p", "test"}, "The signing operation is complete.", 0),
-                        (new [] {"sign", "-c", @"certs\rsa-2048-sha256.pfx", "-p", "test", "-f"}, "The signing operation is complete.", 0)
+                        (new [] {"sign", "-c", CertsPathPrefix + @"rsa-2048-sha256.pfx", "-p", "test"}, "The signing operation is complete.", 0),
+                        (new [] {"sign", "-c", CertsPathPrefix + @"rsa-2048-sha256.pfx", "-p", "test", "-f"}, "The signing operation is complete.", 0)
                     }
                 };
                 //Sign it then unsign it
@@ -93,7 +95,7 @@ namespace OpenVsixSignTool.Tests
                 {
                     new[]
                     {
-                        (new [] {"sign", "-c", @"certs\rsa-2048-sha256.pfx", "-p", "test"}, "The signing operation is complete.", 0),
+                        (new [] {"sign", "-c", CertsPathPrefix + "rsa-2048-sha256.pfx", "-p", "test"}, "The signing operation is complete.", 0),
                         (new [] {"unsign" }, "The unsigning operation is complete.", 0)
                     }
                 };
@@ -107,7 +109,7 @@ namespace OpenVsixSignTool.Tests
                 //Path to PFX does not exist.
                 yield return new object[]
                 {
-                    new [] { "sign", "-c", @"certs\idontexist.pfx", "-p", "test" }, 1, "Specified PFX file does not exist."
+                    new [] { "sign", "-c", CertsPathPrefix + @"idontexist.pfx", "-p", "test" }, 1, "Specified PFX file does not exist."
                 };
                 //Only password specified.
                 yield return new object[]
@@ -122,7 +124,7 @@ namespace OpenVsixSignTool.Tests
                 //Invalid file digest algorithm
                 yield return new object[]
                 {
-                    new [] { "sign", "-c", @"certs\rsa-2048-sha256.pfx", "-p", "test", "-fd", "md2" }, 1, "Specified file digest algorithm is not supported."
+                    new [] { "sign", "-c", CertsPathPrefix + "rsa-2048-sha256.pfx", "-p", "test", "-fd", "md2" }, 1, "Specified file digest algorithm is not supported."
                 };
             }
         }

@@ -110,12 +110,16 @@ namespace OpenVsixSignTool
             {
                 timestampDigestAlgorithm = timestampDigestResult.Value;
             }
-            return PerformSignOnVsixAsync(vsixPathValue, force.HasValue(), timestampServer, fileDigestAlgorithm, timestampDigestAlgorithm, certificate);
+
+            return PerformSignOnVsixAsync(vsixPathValue, force.HasValue(), timestampServer, fileDigestAlgorithm,
+                timestampDigestAlgorithm, certificate);
         }
 
-        internal async Task<int> SignAzure(CommandOption azureKeyVaultUrl, CommandOption azureKeyVaultClientId,
-            CommandOption azureKeyVaultClientSecret, CommandOption azureKeyVaultCertificateName, CommandOption azureKeyVaultAccessToken, CommandOption force,
-            CommandOption fileDigest, CommandOption timestampUrl, CommandOption timestampAlgorithm, CommandArgument vsixPath)
+        internal async Task<int> SignAzure(CommandOption azureKeyVaultUrl, CommandOption azureKeyVaultTenantId,
+            CommandOption azureKeyVaultClientId,
+            CommandOption azureKeyVaultClientSecret, CommandOption azureKeyVaultCertificateName, CommandOption force,
+            CommandOption fileDigest, CommandOption timestampUrl, CommandOption timestampAlgorithm,
+            CommandArgument vsixPath)
         {
             if (!azureKeyVaultUrl.HasValue())
             {
@@ -123,28 +127,36 @@ namespace OpenVsixSignTool
                 return EXIT_CODES.INVALID_OPTIONS;
             }
 
-
-            // we only need the client id/secret if we don't have an access token
-            if (!azureKeyVaultAccessToken.HasValue())
-            {
-                if (!azureKeyVaultClientId.HasValue())
-                {
-                    _signCommandApplication.Out.WriteLine("The Azure Key Vault Client ID or Access Token must be specified for Azure signing.");
-                    return EXIT_CODES.INVALID_OPTIONS;
-                }
-
-                if (!azureKeyVaultClientSecret.HasValue())
-                {
-                    _signCommandApplication.Out.WriteLine("The Azure Key Vault Client Secret or Access Token must be specified for Azure signing.");
-                    return EXIT_CODES.INVALID_OPTIONS;
-                }
-            }
-
             if (!azureKeyVaultCertificateName.HasValue())
             {
-                _signCommandApplication.Out.WriteLine("The Azure Key Vault Client Certificate Name must be specified for Azure signing.");
+                _signCommandApplication.Out.WriteLine(
+                    "The Azure Key Vault Client Certificate Name must be specified for Azure signing.");
                 return EXIT_CODES.INVALID_OPTIONS;
             }
+
+            /*
+            if (!azureKeyVaultTenantId.HasValue())
+            {
+                _signCommandApplication.Out.WriteLine(
+                    "The Azure Key Vault Tenant ID or Access Token must be specified for Azure signing.");
+                return EXIT_CODES.INVALID_OPTIONS;
+            }
+
+            if (!azureKeyVaultClientId.HasValue())
+            {
+                _signCommandApplication.Out.WriteLine(
+                    "The Azure Key Vault Client ID or Access Token must be specified for Azure signing.");
+                return EXIT_CODES.INVALID_OPTIONS;
+            }
+
+            if (!azureKeyVaultClientSecret.HasValue())
+            {
+                _signCommandApplication.Out.WriteLine(
+                    "The Azure Key Vault Client Secret or Access Token must be specified for Azure signing.");
+                return EXIT_CODES.INVALID_OPTIONS;
+            }
+            */
+
             Uri timestampServer = null;
             if (timestampUrl.HasValue())
             {
@@ -176,7 +188,7 @@ namespace OpenVsixSignTool
             {
                 fileDigestAlgorithm = fileDigestResult.Value;
             }
-            var timestampDigestResult = AlgorithmFromInput(timestampAlgorithm.HasValue() ? timestampAlgorithm.Value() : null);
+            var timestampDigestResult = AlgorithmFromInput(timestampAlgorithm.Value());
             if (timestampDigestResult == null)
             {
                 _signCommandApplication.Out.WriteLine("Specified timestamp digest algorithm is not supported.");
@@ -193,17 +205,17 @@ namespace OpenVsixSignTool
                 fileDigestAlgorithm,
                 timestampDigestAlgorithm,
                 azureKeyVaultUrl.Value(),
+                azureKeyVaultTenantId.Value(),
                 azureKeyVaultClientId.Value(),
                 azureKeyVaultCertificateName.Value(),
-                azureKeyVaultClientSecret.Value(),
-                azureKeyVaultAccessToken.Value()
+                azureKeyVaultClientSecret.Value()
             );
         }
 
         private async Task<int> PerformSignOnVsixAsync(string vsixPath, bool force,
             Uri timestampUri, HashAlgorithmName fileDigestAlgorithm, HashAlgorithmName timestampDigestAlgorithm,
             X509Certificate2 certificate
-            )
+        )
         {
             using (var package = OpcPackage.Open(vsixPath, OpcPackageFileMode.ReadWrite))
             {
@@ -238,8 +250,9 @@ namespace OpenVsixSignTool
 
         private async Task<int> PerformAzureSignOnVsixAsync(string vsixPath, bool force,
             Uri timestampUri, HashAlgorithmName fileDigestAlgorithm, HashAlgorithmName timestampDigestAlgorithm,
-            string azureUri, string azureClientId, string azureClientCertificateName, string azureClientSecret, string azureAccessToken
-            )
+            string azureUri, string azureTenantId, string azureClientId, string azureClientCertificateName,
+            string azureClientSecret
+        )
         {
             using (var package = OpcPackage.Open(vsixPath, OpcPackageFileMode.ReadWrite))
             {
@@ -254,11 +267,11 @@ namespace OpenVsixSignTool
                 {
                     FileDigestAlgorithm = fileDigestAlgorithm,
                     PkcsDigestAlgorithm = fileDigestAlgorithm,
+                    AzureTenantId = azureTenantId,
                     AzureClientId = azureClientId,
                     AzureClientSecret = azureClientSecret,
                     AzureKeyVaultCertificateName = azureClientCertificateName,
-                    AzureKeyVaultUrl = azureUri,
-                    AzureAccessToken = azureAccessToken
+                    AzureKeyVaultUrl = azureUri
                 };
 
                 var signature = await signBuilder.SignAsync(signingConfiguration);

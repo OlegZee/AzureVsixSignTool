@@ -7,15 +7,18 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using System.Xml;
+using Azure.Security.KeyVault.Certificates;
 using Xunit;
 
 namespace OpenVsixSignTool.Core.Tests
 {
     public class OpcPackageSigningTests : IDisposable
     {
-        private const string SamplePackage = @"sample\OpenVsixSignToolTest.vsix";
-        private const string SamplePackageSigned = @"sample\OpenVsixSignToolTest-Signed.vsix";
+        private readonly string SamplePackage = @"sample" + Path.DirectorySeparatorChar + "OpenVsixSignToolTest.vsix";
+        private readonly string SamplePackageSigned = @"sample" + Path.DirectorySeparatorChar + "OpenVsixSignToolTest-Signed.vsix";
         private readonly List<string> _shadowFiles = new List<string>();
+
+        private static readonly string certsPathPrefix = "certs" + Path.DirectorySeparatorChar;
 
 
         [Theory]
@@ -43,8 +46,7 @@ namespace OpenVsixSignTool.Core.Tests
         [MemberData(nameof(EcdsaSigningTheories))]
         public async Task ShouldSignFileWithEcdsa(string pfxPath, HashAlgorithmName fileDigestAlgorithm, string expectedAlgorithm)
         {
-            string path;
-            using (var package = ShadowCopyPackage(SamplePackage, out path, OpcPackageFileMode.ReadWrite))
+            using (var package = ShadowCopyPackage(SamplePackage, out _, OpcPackageFileMode.ReadWrite))
             {
                 var builder = package.CreateSignatureBuilder();
                 builder.EnqueueNamedPreset<VSIXSignatureBuilderPreset>();
@@ -63,14 +65,14 @@ namespace OpenVsixSignTool.Core.Tests
         {
             get
             {
-                yield return new object[] { @"certs\rsa-2048-sha256.pfx", HashAlgorithmName.SHA512, OpcKnownUris.SignatureAlgorithms.rsaSHA512.AbsoluteUri };
-                yield return new object[] { @"certs\rsa-2048-sha256.pfx", HashAlgorithmName.SHA384, OpcKnownUris.SignatureAlgorithms.rsaSHA384.AbsoluteUri };
-                yield return new object[] { @"certs\rsa-2048-sha256.pfx", HashAlgorithmName.SHA256, OpcKnownUris.SignatureAlgorithms.rsaSHA256.AbsoluteUri };
-                yield return new object[] { @"certs\rsa-2048-sha256.pfx", HashAlgorithmName.SHA1, OpcKnownUris.SignatureAlgorithms.rsaSHA1.AbsoluteUri };
-                yield return new object[] { @"certs\rsa-2048-sha1.pfx", HashAlgorithmName.SHA512, OpcKnownUris.SignatureAlgorithms.rsaSHA512.AbsoluteUri };
-                yield return new object[] { @"certs\rsa-2048-sha1.pfx", HashAlgorithmName.SHA384, OpcKnownUris.SignatureAlgorithms.rsaSHA384.AbsoluteUri };
-                yield return new object[] { @"certs\rsa-2048-sha1.pfx", HashAlgorithmName.SHA256, OpcKnownUris.SignatureAlgorithms.rsaSHA256.AbsoluteUri };
-                yield return new object[] { @"certs\rsa-2048-sha1.pfx", HashAlgorithmName.SHA1, OpcKnownUris.SignatureAlgorithms.rsaSHA1.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha256.pfx", HashAlgorithmName.SHA512, OpcKnownUris.SignatureAlgorithms.rsaSHA512.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha256.pfx", HashAlgorithmName.SHA384, OpcKnownUris.SignatureAlgorithms.rsaSHA384.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha256.pfx", HashAlgorithmName.SHA256, OpcKnownUris.SignatureAlgorithms.rsaSHA256.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha256.pfx", HashAlgorithmName.SHA1, OpcKnownUris.SignatureAlgorithms.rsaSHA1.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha1.pfx", HashAlgorithmName.SHA512, OpcKnownUris.SignatureAlgorithms.rsaSHA512.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha1.pfx", HashAlgorithmName.SHA384, OpcKnownUris.SignatureAlgorithms.rsaSHA384.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha1.pfx", HashAlgorithmName.SHA256, OpcKnownUris.SignatureAlgorithms.rsaSHA256.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha1.pfx", HashAlgorithmName.SHA1, OpcKnownUris.SignatureAlgorithms.rsaSHA1.AbsoluteUri };
             }
         }
 
@@ -78,8 +80,8 @@ namespace OpenVsixSignTool.Core.Tests
         {
             get
             {
-                yield return new object[] { @"certs\ecdsa-p256-sha256.pfx", HashAlgorithmName.SHA256, OpcKnownUris.SignatureAlgorithms.ecdsaSHA256.AbsoluteUri };
-                yield return new object[] { @"certs\ecdsa-p256-sha256.pfx", HashAlgorithmName.SHA1, OpcKnownUris.SignatureAlgorithms.ecdsaSHA1.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "ecdsa-p256-sha256.pfx", HashAlgorithmName.SHA256, OpcKnownUris.SignatureAlgorithms.ecdsaSHA256.AbsoluteUri };
+                yield return new object[] { certsPathPrefix + "ecdsa-p256-sha256.pfx", HashAlgorithmName.SHA1, OpcKnownUris.SignatureAlgorithms.ecdsaSHA1.AbsoluteUri };
             }
         }
 
@@ -118,7 +120,7 @@ namespace OpenVsixSignTool.Core.Tests
                     {
                         PkcsDigestAlgorithm = HashAlgorithmName.SHA256,
                         FileDigestAlgorithm = HashAlgorithmName.SHA256,
-                        SigningCertificate = new X509Certificate2(@"certs\rsa-2048-sha256.pfx", "test")
+                        SigningCertificate = new X509Certificate2(certsPathPrefix + "rsa-2048-sha256.pfx", "test")
                     }
                 );
             }
@@ -131,7 +133,7 @@ namespace OpenVsixSignTool.Core.Tests
                     {
                         PkcsDigestAlgorithm = HashAlgorithmName.SHA256,
                         FileDigestAlgorithm = HashAlgorithmName.SHA256,
-                        SigningCertificate = new X509Certificate2(@"certs\rsa-2048-sha256.pfx", "test")
+                        SigningCertificate = new X509Certificate2(certsPathPrefix + "rsa-2048-sha256.pfx", "test")
                     }
                 );
             }
@@ -141,7 +143,7 @@ namespace OpenVsixSignTool.Core.Tests
                 Assert.Equal(VerifyResult.Success, signatureManager.VerifySignatures(true));
                 if (signatureManager.Signatures.Count != 1 || signatureManager.Signatures[0].SignedParts.Count != netfxPackage.GetParts().Count() - 1)
                 {
-                    Assert.True(false, "Missing parts");
+                    Assert.Fail("Missing parts");
                 }
             }
         }
@@ -159,7 +161,7 @@ namespace OpenVsixSignTool.Core.Tests
                     {
                         PkcsDigestAlgorithm = HashAlgorithmName.SHA1,
                         FileDigestAlgorithm = HashAlgorithmName.SHA1,
-                        SigningCertificate = new X509Certificate2(@"certs\rsa-2048-sha1.pfx", "test")
+                        SigningCertificate = new X509Certificate2(certsPathPrefix + "rsa-2048-sha1.pfx", "test")
                     }
                 );
             }
@@ -172,7 +174,7 @@ namespace OpenVsixSignTool.Core.Tests
                     {
                         PkcsDigestAlgorithm = HashAlgorithmName.SHA256,
                         FileDigestAlgorithm = HashAlgorithmName.SHA256,
-                        SigningCertificate = new X509Certificate2(@"certs\rsa-2048-sha256.pfx", "test")
+                        SigningCertificate = new X509Certificate2(certsPathPrefix + "rsa-2048-sha256.pfx", "test")
                     }
                 );
             }
@@ -182,7 +184,7 @@ namespace OpenVsixSignTool.Core.Tests
                 Assert.Equal(VerifyResult.Success, signatureManager.VerifySignatures(true));
                 if (signatureManager.Signatures.Count != 1 || signatureManager.Signatures[0].SignedParts.Count != netfxPackage.GetParts().Count() - 1)
                 {
-                    Assert.True(false, "Missing parts");
+                    Assert.Fail("Missing parts");
                 }
                 var packageSignature = signatureManager.Signatures[0];
                 Assert.Equal(OpcKnownUris.SignatureAlgorithms.rsaSHA256.AbsoluteUri, packageSignature.Signature.SignedInfo.SignatureMethod);
@@ -202,19 +204,19 @@ namespace OpenVsixSignTool.Core.Tests
                     {
                         FileDigestAlgorithm = HashAlgorithmName.SHA1,
                         PkcsDigestAlgorithm = HashAlgorithmName.SHA1,
-                        SigningCertificate = new X509Certificate2(@"certs\rsa-2048-sha1.pfx", "test")
+                        SigningCertificate = new X509Certificate2(certsPathPrefix + "rsa-2048-sha1.pfx", "test")
                     }
                 );
             }
             using (var package = OpcPackage.Open(path, OpcPackageFileMode.ReadWrite))
             {
                 var signatures = package.GetSignatures().ToList();
-                Assert.Equal(1, signatures.Count);
+                Assert.Single(signatures);
                 var signature = signatures[0];
                 signature.Remove();
                 Assert.Null(signature.Part);
                 Assert.Throws<InvalidOperationException>(() => signature.CreateTimestampBuilder());
-                Assert.Equal(0, package.GetSignatures().Count());
+                Assert.Empty(package.GetSignatures());
             }
         }
 
@@ -222,10 +224,10 @@ namespace OpenVsixSignTool.Core.Tests
         {
             get
             {
-                yield return new object[] { @"certs\rsa-2048-sha256.pfx", HashAlgorithmName.SHA256 };
-                yield return new object[] { @"certs\rsa-2048-sha256.pfx", HashAlgorithmName.SHA1 };
-                yield return new object[] { @"certs\rsa-2048-sha1.pfx", HashAlgorithmName.SHA256 };
-                yield return new object[] { @"certs\rsa-2048-sha1.pfx", HashAlgorithmName.SHA1 };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha256.pfx", HashAlgorithmName.SHA256 };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha256.pfx", HashAlgorithmName.SHA1 };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha1.pfx", HashAlgorithmName.SHA256 };
+                yield return new object[] { certsPathPrefix + "rsa-2048-sha1.pfx", HashAlgorithmName.SHA1 };
             }
         }
 

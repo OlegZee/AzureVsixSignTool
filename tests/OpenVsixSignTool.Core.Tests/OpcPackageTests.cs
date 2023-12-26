@@ -8,8 +8,8 @@ namespace OpenVsixSignTool.Core.Tests
 {
     public class OpcPackageTests : IDisposable
     {
-        private const string SamplePackage = @"sample\OpenVsixSignToolTest.vsix";
-        private const string SamplePackageSigned = @"sample\OpenVsixSignToolTest-Signed.vsix";
+        private static readonly string SamplePackage = @"sample" + Path.DirectorySeparatorChar + "OpenVsixSignToolTest.vsix";
+        private static readonly string SamplePackageSigned = @"sample" + Path.DirectorySeparatorChar + "OpenVsixSignToolTest-Signed.vsix";
         private readonly List<string> _shadowFiles = new List<string>();
 
         [Fact]
@@ -140,7 +140,7 @@ namespace OpenVsixSignTool.Core.Tests
             using (var package = OpcPackage.Open(SamplePackage))
             {
                 var parts = package.GetParts().ToArray();
-                Assert.Equal(1, parts.Length);
+                Assert.Single(parts);
             }
         }
 

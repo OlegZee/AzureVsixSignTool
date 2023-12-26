@@ -81,7 +81,7 @@ namespace OpenVsixSignTool.Core
 
             var newDocument = new XmlDocument(_document.NameTable);
             newDocument.LoadXml(element.OuterXml);
-            
+
             transformer.LoadInput(newDocument);
 
             var result = transformer.GetOutput(typeof(Stream));
