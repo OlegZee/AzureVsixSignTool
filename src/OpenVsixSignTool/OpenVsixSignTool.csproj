@@ -2,9 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <Authors>Kevin Jones</Authors>
+    <PackageId>AzureVsixSignTool</PackageId>
+    <VersionPrefix>0.1.1</VersionPrefix>
+    <Authors>Kevin Jones;Pand</Authors>
     <TargetFramework>net7.0</TargetFramework>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>avxst</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
   </PropertyGroup>
   <PropertyGroup>
   </PropertyGroup>

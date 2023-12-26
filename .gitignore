@@ -4,6 +4,7 @@ obj/
 bin/
 private/
 !private/.gitkeep
+nupkg/
 
 # ReSharper
 _ReSharper*/
